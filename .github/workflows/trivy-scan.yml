@@ -1,0 +1,63 @@
+name: trivy-scan
+
+on:
+  workflow_call:
+    inputs:
+      scan_type:
+        description: "Scan type: \"fs\" for filesystem/IaC or \"image\" for a container image."
+        type: string
+        default: "fs"
+      target:
+        description: "Path for fs scans; image reference (e.g. \"nginx:latest\") for image scans."
+        type: string
+        default: "."
+      severity:
+        description: "Comma-separated severities to report."
+        type: string
+        default: "HIGH,CRITICAL"
+      upload_sarif:
+        description: "Upload SARIF results to GitHub Security tab."
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+  security-events: write
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run Trivy
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          scan-type: ${{ inputs.scan_type }}
+          scan-ref: ${{ inputs.target }}
+          severity: ${{ inputs.severity }}
+          format: sarif
+          output: trivy-results.sarif
+        continue-on-error: true
+
+      - name: Upload SARIF to GitHub Security
+        if: inputs.upload_sarif
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: trivy-results.sarif
+
+      - name: Print findings summary
+        run: |
+          python3 - <<'EOF'
+          import json, sys
+          data = json.load(open("trivy-results.sarif"))
+          results = data.get("runs", [{}])[0].get("results", [])
+          if not results:
+              print("No findings.")
+              sys.exit(0)
+          counts = {}
+          for r in results:
+              level = r.get("level", "note")
+              counts[level] = counts.get(level, 0) + 1
+          print("Findings:", ", ".join(f"{v} {k}" for k, v in sorted(counts.items())))
+          EOF

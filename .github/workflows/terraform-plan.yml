@@ -1,0 +1,122 @@
+name: terraform-plan
+
+on:
+  workflow_call:
+    inputs:
+      working_directory:
+        description: "Path to the Terraform configuration, relative to repo root."
+        type: string
+        required: true
+      terraform_version:
+        description: "Terraform version constraint, e.g. \"~1.10\"."
+        type: string
+        default: "~1.10"
+      cloud:
+        description: "Cloud provider for authentication: \"aws\", \"azure\", or empty to skip auth."
+        type: string
+        default: ""
+      aws_region:
+        description: "AWS region. Required when cloud = \"aws\"."
+        type: string
+        default: ""
+    secrets:
+      AWS_ROLE_ARN:
+        description: "IAM role ARN to assume via OIDC. Required when cloud = \"aws\"."
+        required: false
+      AZURE_CLIENT_ID:
+        description: "Managed identity client ID. Required when cloud = \"azure\"."
+        required: false
+      AZURE_TENANT_ID:
+        description: "Azure tenant ID. Required when cloud = \"azure\"."
+        required: false
+      AZURE_SUBSCRIPTION_ID:
+        description: "Azure subscription ID. Required when cloud = \"azure\"."
+        required: false
+
+permissions:
+  contents: read
+  id-token: write
+  pull-requests: write
+
+jobs:
+  plan:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ${{ inputs.working_directory }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: Krustytoe/platform-workflows/actions/terraform-setup@main
+        with:
+          terraform_version: ${{ inputs.terraform_version }}
+
+      - name: Authenticate to AWS
+        if: inputs.cloud == 'aws'
+        uses: Krustytoe/platform-workflows/actions/aws-oidc-auth@main
+        with:
+          role_arn: ${{ secrets.AWS_ROLE_ARN }}
+          region: ${{ inputs.aws_region }}
+
+      - name: Authenticate to Azure
+        if: inputs.cloud == 'azure'
+        uses: Krustytoe/platform-workflows/actions/azure-oidc-auth@main
+        with:
+          client_id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant_id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription_id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: fmt check
+        run: terraform fmt -check -recursive
+
+      - name: init
+        run: terraform init -input=false
+
+      - name: validate
+        run: terraform validate
+
+      - name: tflint
+        run: tflint --recursive
+
+      - name: plan
+        id: plan
+        run: |
+          terraform plan -no-color -input=false 2>&1 | tee /tmp/tfplan.txt
+          echo "exit_code=${PIPESTATUS[0]}" >> "$GITHUB_OUTPUT"
+        continue-on-error: true
+
+      - name: Post plan to PR
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        env:
+          WORKING_DIR: ${{ inputs.working_directory }}
+          PLAN_EXIT_CODE: ${{ steps.plan.outputs.exit_code }}
+        with:
+          script: |
+            const fs = require('fs');
+            const plan = fs.readFileSync('/tmp/tfplan.txt', 'utf8');
+            const maxLen = 65000;
+            const body = plan.length > maxLen
+              ? plan.slice(0, maxLen) + '\n\n_Output truncated — see workflow logs for the full plan._'
+              : plan;
+            const icon = process.env.PLAN_EXIT_CODE === '0' ? '✅' : '❌';
+            await github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: [
+                `## ${icon} Terraform Plan — \`${process.env.WORKING_DIR}\``,
+                '',
+                '<details><summary>Show plan output</summary>',
+                '',
+                '```',
+                body,
+                '```',
+                '',
+                '</details>',
+              ].join('\n'),
+            });
+
+      - name: Fail on plan error
+        if: steps.plan.outputs.exit_code != '0'
+        run: exit 1

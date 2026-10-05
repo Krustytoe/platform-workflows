@@ -1,0 +1,29 @@
+name: "Terraform Setup"
+description: "Install Terraform and tflint at consistent versions, then run tflint --init."
+
+inputs:
+  terraform_version:
+    description: "Terraform version constraint."
+    required: false
+    default: "~1.10"
+  tflint_version:
+    description: "tflint version."
+    required: false
+    default: "latest"
+
+runs:
+  using: composite
+  steps:
+    - name: Setup Terraform
+      uses: hashicorp/setup-terraform@v3
+      with:
+        terraform_version: ${{ inputs.terraform_version }}
+
+    - name: Setup tflint
+      uses: terraform-linters/setup-tflint@v4
+      with:
+        tflint_version: ${{ inputs.tflint_version }}
+
+    - name: tflint init
+      shell: bash
+      run: tflint --init

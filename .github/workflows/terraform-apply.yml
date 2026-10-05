@@ -1,0 +1,70 @@
+name: terraform-apply
+
+on:
+  workflow_call:
+    inputs:
+      working_directory:
+        description: "Path to the Terraform configuration, relative to repo root."
+        type: string
+        required: true
+      terraform_version:
+        description: "Terraform version constraint, e.g. \"~1.10\"."
+        type: string
+        default: "~1.10"
+      cloud:
+        description: "Cloud provider for authentication: \"aws\", \"azure\", or empty to skip auth."
+        type: string
+        default: ""
+      aws_region:
+        description: "AWS region. Required when cloud = \"aws\"."
+        type: string
+        default: ""
+    secrets:
+      AWS_ROLE_ARN:
+        required: false
+      AZURE_CLIENT_ID:
+        required: false
+      AZURE_TENANT_ID:
+        required: false
+      AZURE_SUBSCRIPTION_ID:
+        required: false
+
+# Callers set environment: <name> on the job that calls this workflow.
+# GitHub environment protection rules provide the approval gate before apply runs.
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ${{ inputs.working_directory }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: Krustytoe/platform-workflows/actions/terraform-setup@main
+        with:
+          terraform_version: ${{ inputs.terraform_version }}
+
+      - name: Authenticate to AWS
+        if: inputs.cloud == 'aws'
+        uses: Krustytoe/platform-workflows/actions/aws-oidc-auth@main
+        with:
+          role_arn: ${{ secrets.AWS_ROLE_ARN }}
+          region: ${{ inputs.aws_region }}
+
+      - name: Authenticate to Azure
+        if: inputs.cloud == 'azure'
+        uses: Krustytoe/platform-workflows/actions/azure-oidc-auth@main
+        with:
+          client_id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant_id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription_id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: init
+        run: terraform init -input=false
+
+      - name: apply
+        run: terraform apply -auto-approve -input=false

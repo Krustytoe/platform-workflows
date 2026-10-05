@@ -1,0 +1,23 @@
+name: "Azure OIDC Auth"
+description: "Authenticate to Azure via OIDC federated identity — no client secrets. Requires id-token: write on the calling job."
+
+inputs:
+  client_id:
+    description: "Managed identity client ID (from terraform-azure-platform-modules//modules/github-oidc-role)."
+    required: true
+  tenant_id:
+    description: "Azure tenant ID."
+    required: true
+  subscription_id:
+    description: "Azure subscription ID."
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - name: Azure login
+      uses: azure/login@v2
+      with:
+        client-id: ${{ inputs.client_id }}
+        tenant-id: ${{ inputs.tenant_id }}
+        subscription-id: ${{ inputs.subscription_id }}
