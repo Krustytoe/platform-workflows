@@ -4,7 +4,7 @@ on:
   workflow_call:
     inputs:
       scan_type:
-        description: "Scan type: \"fs\" for filesystem/IaC or \"image\" for a container image."
+        description: "Scan type: \"fs\" (vulns/secrets), \"config\" (IaC misconfig), or \"image\" (container image)."
         type: string
         default: "fs"
       target:
@@ -28,13 +28,14 @@ jobs:
   scan:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
 
       - name: Run Trivy
-        uses: aquasecurity/trivy-action@0.28.0
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
         with:
           scan-type: ${{ inputs.scan_type }}
-          scan-ref: ${{ inputs.target }}
+          scan-ref: ${{ inputs.scan_type != 'image' && inputs.target || '' }}
+          image-ref: ${{ inputs.scan_type == 'image' && inputs.target || '' }}
           severity: ${{ inputs.severity }}
           format: sarif
           output: trivy-results.sarif
@@ -42,7 +43,7 @@ jobs:
 
       - name: Upload SARIF to GitHub Security
         if: inputs.upload_sarif
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@1190a975f95ce23525efb6a3fc21ea29567c1b52 # v3.38.2
         with:
           sarif_file: trivy-results.sarif
 

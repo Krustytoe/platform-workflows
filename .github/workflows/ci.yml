@@ -12,11 +12,13 @@ jobs:
   actionlint:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
       - name: Install actionlint
+        env:
+          ACTIONLINT_VERSION: "1.7.12"
         run: |
-          curl -sLO https://raw.githubusercontent.com/rhysd/actionlint/main/scripts/download-actionlint.bash
-          bash download-actionlint.bash
+          curl -fsSLO "https://raw.githubusercontent.com/rhysd/actionlint/v${ACTIONLINT_VERSION}/scripts/download-actionlint.bash"
+          bash download-actionlint.bash "${ACTIONLINT_VERSION}"
           echo "$PWD" >> "$GITHUB_PATH"
       - name: Lint workflows and actions
         run: actionlint -color

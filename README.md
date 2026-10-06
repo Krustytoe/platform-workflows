@@ -2,6 +2,16 @@
 
 Reusable GitHub Actions workflows and composite actions for Terraform, security scanning, and cloud authentication. Designed for teams running on AWS (commercial + GovCloud) and Azure (commercial + Government).
 
+## Versioning
+
+Releases are cut by [release-please](https://github.com/googleapis/release-please) from conventional commits. Pin callers to a release tag (shown below), or to its commit SHA with the tag as a comment so Dependabot can bump it:
+
+```yaml
+uses: Krustytoe/platform-workflows/.github/workflows/trivy-scan.yml@<sha> # v0.1.0
+```
+
+Avoid `@main`: any merge here would immediately change every caller's pipeline.
+
 ## Contents
 
 | Type | Name | What it does |
@@ -22,7 +32,7 @@ Runs `fmt -check → init → validate → tflint → plan` and posts the plan o
 ```yaml
 jobs:
   plan:
-    uses: Krustytoe/platform-workflows/.github/workflows/terraform-plan.yml@main
+    uses: Krustytoe/platform-workflows/.github/workflows/terraform-plan.yml@v0.1.0 # x-release-please-version
     permissions:
       contents: read
       id-token: write
@@ -58,7 +68,7 @@ Runs `init → apply`. Call this after plan is reviewed. Pair with a [GitHub env
 ```yaml
 jobs:
   apply:
-    uses: Krustytoe/platform-workflows/.github/workflows/terraform-apply.yml@main
+    uses: Krustytoe/platform-workflows/.github/workflows/terraform-apply.yml@v0.1.0 # x-release-please-version
     environment: prod          # approval gate lives here
     permissions:
       contents: read
@@ -82,7 +92,7 @@ Runs Trivy against a filesystem/IaC path or container image and uploads the resu
 ```yaml
 jobs:
   scan:
-    uses: Krustytoe/platform-workflows/.github/workflows/trivy-scan.yml@main
+    uses: Krustytoe/platform-workflows/.github/workflows/trivy-scan.yml@v0.1.0 # x-release-please-version
     permissions:
       contents: read
       security-events: write
@@ -94,8 +104,8 @@ jobs:
 
 | Input | Type | Default | Description |
 |---|---|---|---|
-| `scan_type` | string | `fs` | `fs` (filesystem/IaC) or `image` |
-| `target` | string | `.` | Path for `fs`; image reference for `image` |
+| `scan_type` | string | `fs` | `fs` (vulnerabilities/secrets), `config` (IaC misconfiguration), or `image` |
+| `target` | string | `.` | Path for `fs`/`config`; image reference for `image` |
 | `severity` | string | `HIGH,CRITICAL` | Severities to report |
 | `upload_sarif` | boolean | `true` | Upload SARIF to GitHub Security tab |
 
@@ -104,7 +114,7 @@ jobs:
 ## aws-oidc-auth
 
 ```yaml
-- uses: Krustytoe/platform-workflows/actions/aws-oidc-auth@main
+- uses: Krustytoe/platform-workflows/actions/aws-oidc-auth@v0.1.0 # x-release-please-version
   with:
     role_arn: ${{ secrets.AWS_ROLE_ARN }}
     region: us-gov-west-1
@@ -117,7 +127,7 @@ Wraps `aws-actions/configure-aws-credentials`. Requires `id-token: write` permis
 ## azure-oidc-auth
 
 ```yaml
-- uses: Krustytoe/platform-workflows/actions/azure-oidc-auth@main
+- uses: Krustytoe/platform-workflows/actions/azure-oidc-auth@v0.1.0 # x-release-please-version
   with:
     client_id: ${{ secrets.AZURE_CLIENT_ID }}
     tenant_id: ${{ secrets.AZURE_TENANT_ID }}
@@ -131,7 +141,7 @@ Wraps `azure/login`. Requires `id-token: write` permission on the calling job.
 ## terraform-setup
 
 ```yaml
-- uses: Krustytoe/platform-workflows/actions/terraform-setup@main
+- uses: Krustytoe/platform-workflows/actions/terraform-setup@v0.1.0 # x-release-please-version
   with:
     terraform_version: "~1.10"
 ```
@@ -152,7 +162,7 @@ on:
 
 jobs:
   plan:
-    uses: Krustytoe/platform-workflows/.github/workflows/terraform-plan.yml@main
+    uses: Krustytoe/platform-workflows/.github/workflows/terraform-plan.yml@v0.1.0 # x-release-please-version
     permissions:
       contents: read
       id-token: write
@@ -167,7 +177,7 @@ jobs:
   apply:
     needs: plan
     if: github.ref == 'refs/heads/main'
-    uses: Krustytoe/platform-workflows/.github/workflows/terraform-apply.yml@main
+    uses: Krustytoe/platform-workflows/.github/workflows/terraform-apply.yml@v0.1.0 # x-release-please-version
     environment: prod
     permissions:
       contents: read
