@@ -80,7 +80,7 @@ Runs `fmt -check → init → validate → tflint → plan` and posts the plan o
 ```yaml
 jobs:
   plan:
-    uses: Krustytoe/platform-workflows/.github/workflows/terraform-plan.yml@v0.2.0 # x-release-please-version
+    uses: Krustytoe/platform-workflows/.github/workflows/terraform-plan.yml@v0.3.0 # x-release-please-version
     permissions:
       contents: read
       id-token: write
@@ -124,7 +124,7 @@ jobs:
   apply:
     needs: plan
     if: needs.plan.outputs.has_changes == 'true'
-    uses: Krustytoe/platform-workflows/.github/workflows/terraform-apply.yml@v0.2.0 # x-release-please-version
+    uses: Krustytoe/platform-workflows/.github/workflows/terraform-apply.yml@v0.3.0 # x-release-please-version
     permissions:
       contents: read
       id-token: write
@@ -157,7 +157,7 @@ Runs Trivy against a filesystem/IaC path or container image and uploads the resu
 ```yaml
 jobs:
   scan:
-    uses: Krustytoe/platform-workflows/.github/workflows/trivy-scan.yml@v0.2.0 # x-release-please-version
+    uses: Krustytoe/platform-workflows/.github/workflows/trivy-scan.yml@v0.3.0 # x-release-please-version
     permissions:
       contents: read
       security-events: write
@@ -179,7 +179,7 @@ jobs:
 ## aws-oidc-auth
 
 ```yaml
-- uses: Krustytoe/platform-workflows/actions/aws-oidc-auth@v0.2.0 # x-release-please-version
+- uses: Krustytoe/platform-workflows/actions/aws-oidc-auth@v0.3.0 # x-release-please-version
   with:
     role_arn: ${{ secrets.AWS_ROLE_ARN }}
     region: us-gov-west-1
@@ -192,7 +192,7 @@ Wraps `aws-actions/configure-aws-credentials`. Requires `id-token: write` permis
 ## azure-oidc-auth
 
 ```yaml
-- uses: Krustytoe/platform-workflows/actions/azure-oidc-auth@v0.2.0 # x-release-please-version
+- uses: Krustytoe/platform-workflows/actions/azure-oidc-auth@v0.3.0 # x-release-please-version
   with:
     client_id: ${{ secrets.AZURE_CLIENT_ID }}
     tenant_id: ${{ secrets.AZURE_TENANT_ID }}
@@ -206,7 +206,7 @@ Wraps `azure/login`. Requires `id-token: write` permission on the calling job.
 ## terraform-setup
 
 ```yaml
-- uses: Krustytoe/platform-workflows/actions/terraform-setup@v0.2.0 # x-release-please-version
+- uses: Krustytoe/platform-workflows/actions/terraform-setup@v0.3.0 # x-release-please-version
   with:
     terraform_version: "~1.10"
 ```
@@ -227,7 +227,7 @@ on:
 
 jobs:
   plan:
-    uses: Krustytoe/platform-workflows/.github/workflows/terraform-plan.yml@v0.2.0 # x-release-please-version
+    uses: Krustytoe/platform-workflows/.github/workflows/terraform-plan.yml@v0.3.0 # x-release-please-version
     permissions:
       contents: read
       id-token: write
@@ -243,7 +243,7 @@ jobs:
   apply:
     needs: plan
     if: github.event_name == 'push' && needs.plan.outputs.has_changes == 'true'
-    uses: Krustytoe/platform-workflows/.github/workflows/terraform-apply.yml@v0.2.0 # x-release-please-version
+    uses: Krustytoe/platform-workflows/.github/workflows/terraform-apply.yml@v0.3.0 # x-release-please-version
     permissions:
       contents: read
       id-token: write
