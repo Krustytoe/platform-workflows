@@ -6,9 +6,7 @@
       "include-component-in-tag": false,
       "changelog-path": "CHANGELOG.md",
       "extra-files": [
-        "README.md",
-        ".github/workflows/terraform-plan.yml",
-        ".github/workflows/terraform-apply.yml"
+        "README.md"
       ]
     }
   },
