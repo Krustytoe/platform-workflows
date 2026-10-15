@@ -19,6 +19,18 @@ on:
         description: "AWS region. Required when cloud = \"aws\"."
         type: string
         default: ""
+      upload_plan:
+        description: "Upload the saved plan as an artifact so terraform-apply applies exactly what was reviewed."
+        type: boolean
+        default: false
+      plan_artifact_name:
+        description: "Artifact name for the saved plan. Must be unique per working directory within a run."
+        type: string
+        default: "tfplan"
+    outputs:
+      has_changes:
+        description: "\"true\" when the plan contains changes (terraform plan -detailed-exitcode returned 2)."
+        value: ${{ jobs.plan.outputs.has_changes }}
     secrets:
       AWS_ROLE_ARN:
         description: "IAM role ARN to assume via OIDC. Required when cloud = \"aws\"."
@@ -41,26 +53,28 @@ permissions:
 jobs:
   plan:
     runs-on: ubuntu-latest
+    outputs:
+      has_changes: ${{ steps.plan.outputs.has_changes }}
     defaults:
       run:
         working-directory: ${{ inputs.working_directory }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
-      - uses: Krustytoe/platform-workflows/actions/terraform-setup@main
+      - uses: Krustytoe/platform-workflows/actions/terraform-setup@v0.2.0 # x-release-please-version
         with:
           terraform_version: ${{ inputs.terraform_version }}
 
       - name: Authenticate to AWS
         if: inputs.cloud == 'aws'
-        uses: Krustytoe/platform-workflows/actions/aws-oidc-auth@main
+        uses: Krustytoe/platform-workflows/actions/aws-oidc-auth@v0.2.0 # x-release-please-version
         with:
           role_arn: ${{ secrets.AWS_ROLE_ARN }}
           region: ${{ inputs.aws_region }}
 
       - name: Authenticate to Azure
         if: inputs.cloud == 'azure'
-        uses: Krustytoe/platform-workflows/actions/azure-oidc-auth@main
+        uses: Krustytoe/platform-workflows/actions/azure-oidc-auth@v0.2.0 # x-release-please-version
         with:
           client_id: ${{ secrets.AZURE_CLIENT_ID }}
           tenant_id: ${{ secrets.AZURE_TENANT_ID }}
@@ -78,12 +92,31 @@ jobs:
       - name: tflint
         run: tflint --recursive
 
+      # -detailed-exitcode: 0 = no changes, 1 = error, 2 = changes present.
       - name: plan
         id: plan
         run: |
-          terraform plan -no-color -input=false 2>&1 | tee /tmp/tfplan.txt
-          echo "exit_code=${PIPESTATUS[0]}" >> "$GITHUB_OUTPUT"
-        continue-on-error: true
+          set +e
+          terraform plan -no-color -input=false -detailed-exitcode -out=tfplan 2>&1 | tee /tmp/tfplan.txt
+          code=${PIPESTATUS[0]}
+          echo "exit_code=${code}" >> "$GITHUB_OUTPUT"
+          if [ "$code" = "2" ]; then has_changes=true; else has_changes=false; fi
+          echo "has_changes=${has_changes}" >> "$GITHUB_OUTPUT"
+
+      # Job summary is what an environment approver sees on the run page before approving apply.
+      - name: Write plan to job summary
+        if: always() && steps.plan.outputs.exit_code != ''
+        env:
+          WORKING_DIR: ${{ inputs.working_directory }}
+        run: |
+          {
+            echo "## Terraform plan: \`${WORKING_DIR}\`"
+            echo
+            echo '```'
+            head -c 900000 /tmp/tfplan.txt
+            echo
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Post plan to PR
         if: github.event_name == 'pull_request'
@@ -99,13 +132,13 @@ jobs:
             const body = plan.length > maxLen
               ? plan.slice(0, maxLen) + '\n\n_Output truncated — see workflow logs for the full plan._'
               : plan;
-            const icon = process.env.PLAN_EXIT_CODE === '0' ? '✅' : '❌';
+            const icon = { '0': '✅ No changes', '2': '📝 Changes' }[process.env.PLAN_EXIT_CODE] ?? '❌ Failed';
             await github.rest.issues.createComment({
               issue_number: context.issue.number,
               owner: context.repo.owner,
               repo: context.repo.repo,
               body: [
-                `## ${icon} Terraform Plan — \`${process.env.WORKING_DIR}\``,
+                `## ${icon}: Terraform Plan — \`${process.env.WORKING_DIR}\``,
                 '',
                 '<details><summary>Show plan output</summary>',
                 '',
@@ -117,6 +150,16 @@ jobs:
               ].join('\n'),
             });
 
+      # The plan file can contain sensitive values in plaintext: keep retention short.
+      - name: Upload plan
+        if: inputs.upload_plan && steps.plan.outputs.has_changes == 'true'
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: ${{ inputs.plan_artifact_name }}
+          path: ${{ inputs.working_directory }}/tfplan
+          retention-days: 1
+          if-no-files-found: error
+
       - name: Fail on plan error
-        if: steps.plan.outputs.exit_code != '0'
+        if: steps.plan.outputs.exit_code != '0' && steps.plan.outputs.exit_code != '2'
         run: exit 1
