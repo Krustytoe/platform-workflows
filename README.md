@@ -47,7 +47,7 @@ flowchart LR
 - **What gets approved is what gets applied.** The post-merge plan is saved as a short-lived artifact and shown in the run's job summary; the approver reviews it at the environment gate, and apply runs that exact plan file. If state drifted in between, Terraform rejects the stale plan instead of applying something nobody saw.
 - **Plans are reviewable where the change is reviewed.** The plan lands as a collapsible PR comment, so approvers see infrastructure impact next to the code diff.
 - **Least-privilege tokens.** Each workflow declares only the `permissions` it needs; the scan job gets only `contents: read` and `security-events: write`.
-- **Supply-chain pinning.** Third-party actions are pinned to full commit SHAs with the version as a comment, so Dependabot can propose bumps as reviewable PRs. This repo's own composite actions are referenced by release tag, kept in step by release-please, so a merge to `main` never changes a released workflow. Callers pin this repo by SHA.
+- **Supply-chain pinning.** Third-party actions are pinned to full commit SHAs with the version as a comment, so Dependabot can propose bumps as reviewable PRs. The reusable workflows inline the steps of this repo's composite actions instead of calling them, so a released workflow never pulls in unreleased code from `main`. Callers pin this repo by SHA.
 - **Scan findings are visible, not build-breaking, by default.** Trivy results go to the Security tab as SARIF, so teams can triage against a remediation SLA instead of having pipelines blocked by a newly published CVE.
 
 ## Versioning
@@ -58,7 +58,7 @@ Releases are cut by [release-please](https://github.com/googleapis/release-pleas
 uses: Krustytoe/platform-workflows/.github/workflows/trivy-scan.yml@<sha> # v0.1.0
 ```
 
-Avoid `@main`: any merge here would immediately change every caller's pipeline. The reusable workflows follow the same rule internally: they call this repo's composite actions at the matching release tag, which release-please bumps in each release PR.
+Avoid `@main`: any merge here would immediately change every caller's pipeline. The reusable workflows follow the same rule internally: they don't call this repo's composite actions (a workflow can't pin its own repo to its own SHA), they inline those steps with every third-party action SHA-pinned.
 
 ## Contents
 
