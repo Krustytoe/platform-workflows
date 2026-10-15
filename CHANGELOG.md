@@ -5,7 +5,7 @@
 
 ### ⚠ BREAKING CHANGES
 
-* terraform-apply requires an `environment` input. Move
+* terraform-apply requires an `environment` input. Move `environment:` from the calling job into `with:`.
 
 ### Features
 
