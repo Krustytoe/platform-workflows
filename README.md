@@ -2,6 +2,50 @@
 
 Reusable GitHub Actions workflows and composite actions for Terraform, security scanning, and cloud authentication. Designed for teams running on AWS (commercial + GovCloud) and Azure (commercial + Government).
 
+## Architecture
+
+```mermaid
+flowchart LR
+  pr["Pull request"]
+
+  subgraph plan["terraform-plan.yml"]
+    p1["fmt -check"]
+    p2["init + validate"]
+    p3["tflint"]
+    p4["plan"]
+    p5["Plan posted as PR comment"]
+  end
+
+  scan["trivy-scan.yml<br/>fs / config / image"]
+  sarif["SARIF in GitHub Security tab"]
+  review{"Human review + merge"}
+  gate{"GitHub environment<br/>approval gate"}
+  apply["terraform-apply.yml<br/>init + apply"]
+  auth["aws-oidc-auth / azure-oidc-auth<br/>short-lived OIDC credentials"]
+
+  pr --> p1
+  p1 --> p2
+  p2 --> p3
+  p3 --> p4
+  p4 --> p5
+  pr --> scan
+  scan --> sarif
+  p5 --> review
+  review -- "push to main" --> gate
+  gate --> apply
+  auth -.-> p4
+  auth -.-> apply
+```
+
+## Design decisions
+
+- **No long-lived cloud credentials anywhere.** Both clouds authenticate through OIDC federation; there are no access keys or client secrets to store, rotate, or leak.
+- **The approval gate lives in GitHub environments, not in workflow logic.** Required reviewers are configured per environment in repo settings, so approvals have an audit trail and can't be bypassed by editing YAML in a PR.
+- **Plans are reviewable where the change is reviewed.** The plan lands as a collapsible PR comment, so approvers see infrastructure impact next to the code diff.
+- **Least-privilege tokens.** Each workflow declares only the `permissions` it needs; the scan job gets only `contents: read` and `security-events: write`.
+- **Supply-chain pinning.** Third-party actions are pinned to full commit SHAs with the version as a comment, so Dependabot can propose bumps as reviewable PRs. Callers pin this repo the same way.
+- **Scan findings are visible, not build-breaking, by default.** Trivy results go to the Security tab as SARIF, so teams can triage against a remediation SLA instead of having pipelines blocked by a newly published CVE.
+
 ## Versioning
 
 Releases are cut by [release-please](https://github.com/googleapis/release-please) from conventional commits. Pin callers to a release tag (shown below), or to its commit SHA with the tag as a comment so Dependabot can bump it:
