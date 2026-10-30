@@ -1,5 +1,7 @@
 # platform-workflows
 
+[![CI](https://github.com/Krustytoe/platform-workflows/actions/workflows/ci.yml/badge.svg)](https://github.com/Krustytoe/platform-workflows/actions/workflows/ci.yml) [![Release](https://img.shields.io/github/v/release/Krustytoe/platform-workflows)](https://github.com/Krustytoe/platform-workflows/releases/latest) [![License](https://img.shields.io/github/license/Krustytoe/platform-workflows)](LICENSE)
+
 Reusable GitHub Actions workflows and composite actions for Terraform, security scanning, and cloud authentication. Designed for teams running on AWS (commercial + GovCloud) and Azure (commercial + Government).
 
 ## Architecture
