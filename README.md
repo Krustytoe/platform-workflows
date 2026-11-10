@@ -267,6 +267,10 @@ jobs:
 | plan (after merge) | `repo:<org>/<repo>:ref:refs/heads/main` | Read-only |
 | apply | `repo:<org>/<repo>:environment:prod` | Write; only reachable through the approval gate |
 
+## Used by
+
+- [aws-genai-platform](https://github.com/Krustytoe/aws-genai-platform) and [azure-genai-platform](https://github.com/Krustytoe/azure-genai-platform) call `trivy-scan.yml` for IaC and dependency scanning on every PR and weekly.
+
 ## License
 
 MIT
