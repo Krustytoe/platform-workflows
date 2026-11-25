@@ -2,6 +2,8 @@
 
 [![CI](https://github.com/Krustytoe/platform-workflows/actions/workflows/ci.yml/badge.svg)](https://github.com/Krustytoe/platform-workflows/actions/workflows/ci.yml) [![Release](https://img.shields.io/github/v/release/Krustytoe/platform-workflows)](https://github.com/Krustytoe/platform-workflows/releases/latest) [![License](https://img.shields.io/github/license/Krustytoe/platform-workflows)](LICENSE)
 
+> **When to use this repo:** Use this repo when you want shared GitHub Actions automation templates that other repos can call to validate and apply infrastructure changes, run security scans, and sign into AWS or Azure without stored passwords.
+
 Reusable GitHub Actions workflows and composite actions for Terraform, security scanning, and cloud authentication. Designed for teams running on AWS (commercial + GovCloud) and Azure (commercial + Government).
 
 ## Architecture
