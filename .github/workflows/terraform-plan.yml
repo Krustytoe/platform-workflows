@@ -60,6 +60,8 @@ jobs:
         working-directory: ${{ inputs.working_directory }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
 
       # Steps from this repo's composite actions are inlined rather than referenced: a reusable workflow
       # can't pin its own repo's actions to its own SHA, and GITHUB_TOKEN can't commit version bumps

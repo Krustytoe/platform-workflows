@@ -1,6 +1,6 @@
 # platform-workflows
 
-[![CI](https://github.com/Krustytoe/platform-workflows/actions/workflows/ci.yml/badge.svg)](https://github.com/Krustytoe/platform-workflows/actions/workflows/ci.yml) [![Release](https://img.shields.io/github/v/release/Krustytoe/platform-workflows)](https://github.com/Krustytoe/platform-workflows/releases/latest) [![License](https://img.shields.io/github/license/Krustytoe/platform-workflows)](LICENSE)
+[![CI](https://github.com/Krustytoe/platform-workflows/actions/workflows/ci.yml/badge.svg)](https://github.com/Krustytoe/platform-workflows/actions/workflows/ci.yml) [![Release](https://img.shields.io/github/v/release/Krustytoe/platform-workflows)](https://github.com/Krustytoe/platform-workflows/releases/latest) [![License](https://img.shields.io/github/license/Krustytoe/platform-workflows)](LICENSE) [![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/Krustytoe/platform-workflows/badge)](https://scorecard.dev/viewer/?uri=github.com/Krustytoe/platform-workflows)
 
 > **When to use this repo:** Use this repo when you want shared GitHub Actions automation templates that other repos can call to validate and apply infrastructure changes, run security scans, and sign into AWS or Azure without stored passwords.
 
