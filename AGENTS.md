@@ -15,6 +15,7 @@ Reusable GitHub Actions workflows and composite actions for Terraform plan/apply
 - `actions/aws-oidc-auth/action.yml`, `actions/azure-oidc-auth/action.yml` — composite OIDC auth actions (no long-lived keys or client secrets).
 - `actions/terraform-setup/action.yml` — composite action installing Terraform and tflint, then `tflint --init`.
 - `.github/workflows/ci.yml` — actionlint on every PR and push to `main`.
+- `.github/workflows/zizmor.yml` — zizmor static security analysis of the workflows, SARIF to the Security tab. `.github/workflows/scorecard.yml` — weekly OpenSSF Scorecard.
 - `.github/workflows/release-please.yml`, `release-please-config.json`, `.release-please-manifest.json`, `CHANGELOG.md` — releases.
 - `.github/workflows/dependabot-auto-merge.yml`, `.github/dependabot.yml` — weekly action bumps for `/` and `/actions/*`; patch/minor auto-merge, majors left for review.
 - `README.md` — usage docs with input/output/secret tables for every workflow and action.
